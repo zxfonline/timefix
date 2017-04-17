@@ -6,6 +6,7 @@ package timefix
 
 import (
 	"fmt"
+	"log"
 	"regexp"
 	"strconv"
 	"time"
@@ -16,7 +17,17 @@ var (
 	TimeFormate string = "2006-01-02 15:04:05"
 	//时差修正 毫秒差值
 	TimeFix int64
+	//服务器使用的标准时区
+	Server_Location *time.Location = time.Local
 )
+
+func init() {
+	if local, err := time.LoadLocation("Hongkong"); err == nil && local != nil {
+		Server_Location = local
+	} else {
+		log.Println("[WARN ] load server location[Hongkong] error:", err)
+	}
+}
 
 const (
 	//一天的毫秒数
@@ -112,14 +123,14 @@ func S2UnixTime(value string, loc *time.Location) time.Time {
 	return time.Date(year, time.Month(month), day, hour, min, sec, 0, loc)
 }
 
-//获取指定时间的下一个周末得时间,自己处理好时区的问题
+//获取指定时间的下一个周末时间,自己处理好时区的问题,周一凌晨作为跨周，如果传入的时间没有超过周一凌晨，这返回周一凌晨的时间点，否则返回下一周的周一凌晨
 func NextSundayMS(tm time.Time) time.Time {
 	mt := NextMidnight(tm, 0)
 	weekday := tm.Weekday()
 	if weekday == time.Sunday {
-		return Ms2Time(mt.UnixNano()/1e6 + 7*MILLISECONDS_OF_DAY).In(tm.Location())
+		return Ms2Time(mt.UnixNano() / 1e6).In(tm.Location()).Add(24 * time.Hour)
 	}
-	return Ms2Time(mt.UnixNano()/1e6 + int64((7-int(weekday))*MILLISECONDS_OF_DAY)).In(tm.Location())
+	return Ms2Time(mt.UnixNano()/1e6 + int64((7-int(weekday))*MILLISECONDS_OF_DAY)).In(tm.Location()).Add(24 * time.Hour)
 }
 
 // 返回当前的整点时间
@@ -130,7 +141,8 @@ func SharpClock(tm time.Time) time.Time {
 }
 
 //func main() {
-//	t1 := S2UnixTime("2016-05-22 07:59:59", time.Local)
+//	//	t1 := S2UnixTime("2015-12-31 00:00:00", Server_Location)
+//	t1 := S2UnixTime("2016-12-31 00:00:00", Server_Location)
 //	t2 := NextSundayMS(t1.UTC())
 //	fmt.Println(t1.Format(TimeFormate))
 //	fmt.Println(t2.UTC().Format(TimeFormate))
@@ -139,4 +151,24 @@ func SharpClock(tm time.Time) time.Time {
 //返回从整点到现在的差值
 func NowToSharpClock(tm time.Time) time.Duration {
 	return time.Duration(tm.UnixNano() - SharpClock(tm).UnixNano())
+}
+
+//检查是否跨周
+func CheckCrossWeek(base time.Time, now time.Time) bool {
+	year1, week1 := base.ISOWeek()
+	year2, week2 := now.ISOWeek()
+	if (year1 == year2 && week2-week1 > 0) || ((year1 < year2) && (year2-year1 > 1 || week2 > 1 || now.Unix() > NextSundayMS(base).Unix())) { //跨周
+		return true
+	}
+	return false
+}
+
+//检查是否跨天
+func CheckCrossDay(base time.Time, now time.Time) bool {
+	year1, month1, day1 := base.Date()
+	year2, month2, day2 := now.Date()
+	if (year1 == year2 && ((month1 == month2 && day2-day1 >= 1) || (month1 < month2))) || (year1 < year2) { //跨天
+		return true
+	}
+	return false
 }
