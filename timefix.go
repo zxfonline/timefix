@@ -52,14 +52,19 @@ func NanosTime() int64 {
 	return time.Now().UnixNano() - TimeFix
 }
 
-//服务器当前时间
-func CurrentTime() time.Time {
-	return Nanos2Time(NanosTime())
-}
-
 //当前本地时间 秒 已修正
 func SecondTime() int64 {
 	return NanosTime() / int64(time.Second)
+}
+
+//当前本地时间 毫秒 已修正
+func MillisTime() int64 {
+	return NanosTime() / int64(time.Millisecond)
+}
+
+//服务器当前时间
+func CurrentTime() time.Time {
+	return Nanos2Time(NanosTime())
 }
 
 //时间转成毫秒
