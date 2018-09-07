@@ -24,10 +24,10 @@ var (
 )
 
 func init() {
-	if local, err := time.LoadLocation("Hongkong"); err == nil && local != nil {
+	if local, err := time.LoadLocation("Asia/Shanghai"); err == nil && local != nil {
 		Server_Location = local
 	} else {
-		log.Println("[WARN ] load server location[Hongkong] error:", err)
+		log.Println("[WARN ] load server location[Asia/Shanghai] error:", err)
 	}
 }
 
