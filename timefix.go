@@ -52,6 +52,11 @@ func NanosTime() int64 {
 	return time.Now().UnixNano() - TimeFix
 }
 
+//服务器当前时间
+func CurrentTime() time.Time {
+	return Nanos2Time(NanosTime())
+}
+
 //当前本地时间 秒 已修正
 func SecondTime() int64 {
 	return NanosTime() / int64(time.Second)
@@ -62,9 +67,9 @@ func MillisTime() int64 {
 	return NanosTime() / int64(time.Millisecond)
 }
 
-//服务器当前时间
-func CurrentTime() time.Time {
-	return Nanos2Time(NanosTime())
+//当前本地时间 毫秒 已修正
+func CurrentMS() int64 {
+	return NanosTime() / int64(time.Millisecond)
 }
 
 //时间转成毫秒
@@ -121,6 +126,15 @@ func OtherDay(t1, t2 time.Time) bool {
 	return year1 == year2 && month1 == month2 && day1 == day2
 }
 
+//获取两个时间跨了多少天
+func DeltaDays(unix1, unix2 int64) int64 {
+	t1 := Second2Time(unix1)
+	t2 := Second2Time(unix2)
+	t1 = Time2Midnight(t1)
+	t2 = Time2Midnight(t2)
+	return int64(t2.Sub(t1)/time.Millisecond) / MILLISECONDS_OF_DAY
+}
+
 // 判断两个时间是否是同一天(t1,t2为秒)
 func OtherDayByUnix(t1, t2 int64) bool {
 	div := (t1 - t2) * MILLISECONDS_OF_SECOND
@@ -131,11 +145,11 @@ func OtherDayByUnix(t1, t2 int64) bool {
 }
 
 // date format: "2006-01-02 13:04:00"
-func S2UnixTime(value string, loc *time.Location) time.Time {
+func S2UnixTime(value string, loc *time.Location) (*time.Time, error) {
 	re := regexp.MustCompile(`([\d]+)-([\d]+)-([\d]+) ([\d]+):([\d]+):([\d]+)`)
 	slices := re.FindStringSubmatch(value)
 	if slices == nil || len(slices) != 7 {
-		panic(fmt.Errorf("time[%s] format error, expect format: 2006-01-02 13:04:00 \n", value))
+		return nil, fmt.Errorf("time[%s] format error, expect format: 2006-01-02 13:04:00 \n", value)
 	}
 	year, _ := strconv.Atoi(slices[1])
 	month, _ := strconv.Atoi(slices[2])
@@ -143,10 +157,11 @@ func S2UnixTime(value string, loc *time.Location) time.Time {
 	hour, _ := strconv.Atoi(slices[4])
 	min, _ := strconv.Atoi(slices[5])
 	sec, _ := strconv.Atoi(slices[6])
-	return time.Date(year, time.Month(month), day, hour, min, sec, 0, loc)
+	tt := time.Date(year, time.Month(month), day, hour, min, sec, 0, loc)
+	return &tt, nil
 }
 
-//获取指定时间的下一个周末时间,自己处理好时区的问题,周一凌晨作为跨周，如果传入的时间没有超过周一凌晨，这返回周一凌晨的时间点，否则返回下一周的周一凌晨
+//获取指定时间的下一个周末时间,自己处理好时区的问题,周一凌晨作为跨周，如果传入的时间没有超过周一凌晨，则返回周一凌晨的时间点，否则返回下一周的周一凌晨
 func NextSundayMS(tm time.Time) time.Time {
 	mt := NextMidnight(tm, 0)
 	weekday := tm.Weekday()
@@ -177,28 +192,28 @@ func NowToSharpClock(tm time.Time) time.Duration {
 }
 
 //检查是否跨周
-func CheckCrossWeek(base time.Time, now time.Time) bool {
-	year1, week1 := base.ISOWeek()
+func CheckCrossWeek(baset time.Time, now time.Time) bool {
+	year1, week1 := baset.ISOWeek()
 	year2, week2 := now.ISOWeek()
-	if (year1 == year2 && week2-week1 > 0) || ((year1 < year2) && (year2-year1 > 1 || week2 > 1 || now.Unix() > NextSundayMS(base).Unix())) { //跨周
+	if (year1 == year2 && week2-week1 > 0) || ((year1 < year2) && (year2-year1 > 1 || week2 > 1 || now.Unix() > NextSundayMS(baset).Unix())) { //跨周
 		return true
 	}
 	return false
 }
 
 //检查是否跨天
-func CheckCrossDay(base time.Time, now time.Time) bool {
-	year1, month1, day1 := base.Date()
+func CheckCrossDay(baset time.Time, now time.Time) bool {
+	year1, month1, day1 := baset.Date()
 	year2, month2, day2 := now.Date()
-	if (year1 == year2 && ((month1 == month2 && day2-day1 >= 1) || (month1 < month2))) || (year1 < year2) { //跨天
+	if (year1 == year2 && ((month1 < month2) || (month1 == month2 && day2-day1 >= 1))) || (year1 < year2) { //跨天
 		return true
 	}
 	return false
 }
 
 //检查是否跨月
-func CheckCrossMonth(base time.Time, now time.Time) bool {
-	year1, month1, _ := base.Date()
+func CheckCrossMonth(baset time.Time, now time.Time) bool {
+	year1, month1, _ := baset.Date()
 	year2, month2, _ := now.Date()
 	if (year1 == year2 && month1 < month2) || (year1 < year2) { //跨天
 		return true
