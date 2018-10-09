@@ -16,7 +16,7 @@ var (
 	//时间格式
 	TimeFormate string = "2006-01-02 15:04:05"
 
-	SIMPLE_DAY_FORMAT string = "20060102"
+	SIMPLE_DAY_FORMAT string = "2006-01-02"
 	//时差修正 纳秒差值
 	TimeFix int64
 	//服务器使用的标准时区
