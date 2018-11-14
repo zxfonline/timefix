@@ -13,13 +13,13 @@ import (
 )
 
 var (
-	//时间格式
+	//TimeFormate 时间格式
 	TimeFormate string = "2006-01-02 15:04:05"
 
 	SIMPLE_DAY_FORMAT string = "2006-01-02"
-	//时差修正 纳秒差值
+	//TimeFix 时差修正 纳秒差值
 	TimeFix int64
-	//服务器使用的标准时区
+	//Server_Location 服务器使用的标准时区
 	Server_Location *time.Location = time.Local
 )
 
@@ -32,101 +32,101 @@ func init() {
 }
 
 const (
-	//一天的毫秒数
+	//MILLISECONDS_OF_DAY 一天的毫秒数
 	MILLISECONDS_OF_DAY = 24 * MILLISECONDS_OF_HOUR
-	//一小时的毫秒数
+	//MILLISECONDS_OF_HOUR 一小时的毫秒数
 	MILLISECONDS_OF_HOUR = 60 * MILLISECONDS_OF_MINUTE
-	//一分钟的毫秒数
+	//MILLISECONDS_OF_MINUTE 一分钟的毫秒数
 	MILLISECONDS_OF_MINUTE = 60 * MILLISECONDS_OF_SECOND
-	//一秒的毫秒数
+	//MILLISECONDS_OF_SECOND 一秒的毫秒数
 	MILLISECONDS_OF_SECOND = 1000
 )
 
-//重置时间，传入utc标准时间UnixNano()
+//ResetTime 重置时间，传入utc标准时间UnixNano()
 func ResetTime(t int64) {
 	TimeFix = time.Now().UnixNano() - t
 }
 
-//当前本地时间 纳秒 已修正
+//NanosTime 当前本地时间 纳秒 已修正
 func NanosTime() int64 {
 	return time.Now().UnixNano() - TimeFix
 }
 
-//服务器当前时间
+//CurrentTime 服务器当前时间
 func CurrentTime() time.Time {
 	return Nanos2Time(NanosTime())
 }
 
-//当前本地时间 秒 已修正
+//SecondTime 当前本地时间 秒 已修正
 func SecondTime() int64 {
 	return NanosTime() / int64(time.Second)
 }
 
-//当前本地时间 毫秒 已修正
+//MillisTime 当前本地时间 毫秒 已修正
 func MillisTime() int64 {
 	return NanosTime() / int64(time.Millisecond)
 }
 
-//当前本地时间 毫秒 已修正
+//CurrentMS 当前本地时间 毫秒 已修正
 func CurrentMS() int64 {
 	return NanosTime() / int64(time.Millisecond)
 }
 
-//时间转成毫秒
+//TimeMillis 时间转成毫秒
 func TimeMillis(t time.Duration) int64 {
 	return t.Nanoseconds() / int64(time.Millisecond)
 }
 
-//时间转成秒
+//TimeSecond 时间转成秒
 func TimeSecond(t time.Duration) int64 {
 	return t.Nanoseconds() / int64(time.Second)
 }
 
-//纳秒时间转成服务器时间(根据传入的时间的时区在返回的时间上进行时区纠正time.Time().In(tm.Location()))
+//Nanos2Time 纳秒时间转成服务器时间(根据传入的时间的时区在返回的时间上进行时区纠正time.Time().In(tm.Location()))
 func Nanos2Time(ns int64) time.Time {
 	return time.Unix(ns/int64(time.Second), ns%int64(time.Second)).In(Server_Location)
 }
 
-//秒时间转成服务器时间(根据传入的时间的时区在返回的时间上进行时区纠正time.Time().In(tm.Location()))
+//Second2Time 秒时间转成服务器时间(根据传入的时间的时区在返回的时间上进行时区纠正time.Time().In(tm.Location()))
 func Second2Time(second int64) time.Time {
 	return time.Unix(second, 0).In(Server_Location)
 }
 
-// 获得指定时间的凌晨时间
+//Time2Midnight 获得指定时间的凌晨时间
 func Time2Midnight(tm time.Time) time.Time {
 	year, month, day := tm.Date()
 	return time.Date(year, month, day, 0, 0, 0, 0, tm.Location())
 }
 
-//获取一个时间点的 x日后的凌晨时间
+//NextMidnight 获取一个时间点的 x日后的凌晨时间
 func NextMidnight(tm time.Time, day int) time.Time {
 	midTime := Time2Midnight(tm)
 	ns := midTime.UnixNano() + int64(day*MILLISECONDS_OF_DAY)*int64(time.Millisecond)
 	return Nanos2Time(ns).In(tm.Location())
 }
 
-// 从一个时间戳获取下一个准点时间
+//NextHour 从一个时间戳获取下一个准点时间
 func NextHour(tm time.Time) time.Time {
 	year, month, day := tm.Date()
 	hour, _, _ := tm.Clock()
 	return time.Date(year, month, day, hour+1, 0, 0, 0, tm.Location())
 }
 
-// 从一个时间戳获取下一个准点时间
+//NextHours 从一个时间戳获取下一个准点时间
 func NextHours(tm time.Time, n int) time.Time {
 	year, month, day := tm.Date()
 	hour, _, _ := tm.Clock()
 	return time.Date(year, month, day, hour+n, 0, 0, 0, tm.Location())
 }
 
-// 判断两个时间是否是同一天（默认将两个时间转换成0时区的时间进行比较）
+//OtherDay 判断两个时间是否是同一天（默认将两个时间转换成0时区的时间进行比较）
 func OtherDay(t1, t2 time.Time) bool {
 	year1, month1, day1 := t1.UTC().Date()
 	year2, month2, day2 := t2.UTC().Date()
 	return year1 == year2 && month1 == month2 && day1 == day2
 }
 
-//获取两个时间跨了多少天
+//DeltaDays 获取两个时间跨了多少天
 func DeltaDays(unix1, unix2 int64) int64 {
 	t1 := Second2Time(unix1)
 	t2 := Second2Time(unix2)
@@ -135,7 +135,7 @@ func DeltaDays(unix1, unix2 int64) int64 {
 	return int64(t2.Sub(t1)/time.Millisecond) / MILLISECONDS_OF_DAY
 }
 
-// 判断两个时间是否是同一天(t1,t2为秒)
+//OtherDayByUnix 判断两个时间是否是同一天(t1,t2为秒)
 func OtherDayByUnix(t1, t2 int64) bool {
 	div := (t1 - t2) * MILLISECONDS_OF_SECOND
 	if div < 0 {
@@ -144,7 +144,7 @@ func OtherDayByUnix(t1, t2 int64) bool {
 	return div < MILLISECONDS_OF_DAY
 }
 
-// date format: "2006-01-02 13:04:00"
+//S2UnixTime date format: "2006-01-02 13:04:00"
 func S2UnixTime(value string, loc *time.Location) (*time.Time, error) {
 	re := regexp.MustCompile(`([\d]+)-([\d]+)-([\d]+) ([\d]+):([\d]+):([\d]+)`)
 	slices := re.FindStringSubmatch(value)
@@ -161,9 +161,9 @@ func S2UnixTime(value string, loc *time.Location) (*time.Time, error) {
 	return &tt, nil
 }
 
-//获取指定时间的下一个周末时间,自己处理好时区的问题,周一凌晨作为跨周，如果传入的时间没有超过周一凌晨，则返回周一凌晨的时间点，否则返回下一周的周一凌晨
+//NextSundayMS 获取指定时间的下一个周末时间,自己处理好时区的问题,周一凌晨作为跨周，如果传入的时间没有超过周一凌晨，则返回周一凌晨的时间点，否则返回下一周的周一凌晨
 func NextSundayMS(tm time.Time) time.Time {
-	mt := NextMidnight(tm, 0)
+	mt := Time2Midnight(tm)
 	weekday := tm.Weekday()
 	if weekday == time.Sunday {
 		return Nanos2Time(mt.UnixNano()).In(tm.Location()).Add(24 * time.Hour)
@@ -171,7 +171,7 @@ func NextSundayMS(tm time.Time) time.Time {
 	return Nanos2Time(mt.UnixNano() + int64((7-int64(weekday))*MILLISECONDS_OF_DAY*int64(time.Millisecond))).In(tm.Location()).Add(24 * time.Hour)
 }
 
-// 返回当前的整点时间
+//SharpClock 返回当前的整点时间
 func SharpClock(tm time.Time) time.Time {
 	year, month, day := tm.Date()
 	hour, _, _ := tm.Clock()
@@ -179,19 +179,18 @@ func SharpClock(tm time.Time) time.Time {
 }
 
 //func main() {
-//	//	t1 := S2UnixTime("2015-12-31 00:00:00", Server_Location)
-//	t1 := S2UnixTime("2016-12-31 00:00:00", Server_Location)
-//	t2 := NextSundayMS(t1.UTC())
+//	t1 := S2UnixTime("2018-11-05 00:00:00", Server_Location)
+//	t2 := NextSundayMS(t1.Local())
 //	fmt.Println(t1.Format(TimeFormate))
-//	fmt.Println(t2.UTC().Format(TimeFormate))
+//	fmt.Println(t2.Local().Format(TimeFormate))
 //}
 
-//返回从整点到现在的差值
+//NowToSharpClock 返回从整点到现在的差值
 func NowToSharpClock(tm time.Time) time.Duration {
 	return time.Duration(tm.UnixNano() - SharpClock(tm).UnixNano())
 }
 
-//检查是否跨周
+//CheckCrossWeek 检查是否跨周
 func CheckCrossWeek(baset time.Time, now time.Time) bool {
 	year1, week1 := baset.ISOWeek()
 	year2, week2 := now.ISOWeek()
@@ -201,7 +200,7 @@ func CheckCrossWeek(baset time.Time, now time.Time) bool {
 	return false
 }
 
-//检查是否跨天
+//CheckCrossDay 检查是否跨天
 func CheckCrossDay(baset time.Time, now time.Time) bool {
 	year1, month1, day1 := baset.Date()
 	year2, month2, day2 := now.Date()
@@ -211,7 +210,7 @@ func CheckCrossDay(baset time.Time, now time.Time) bool {
 	return false
 }
 
-//检查是否跨月
+//CheckCrossMonth 检查是否跨月
 func CheckCrossMonth(baset time.Time, now time.Time) bool {
 	year1, month1, _ := baset.Date()
 	year2, month2, _ := now.Date()
@@ -237,11 +236,6 @@ func GetDayInMon(year int, mon int) int {
 	}
 
 	return day
-}
-
-//GetTimeFormatString 获取日期字符串
-func GetTimeFormatString(t time.Time) string {
-	return t.Format(SIMPLE_DAY_FORMAT)
 }
 
 // short string format
