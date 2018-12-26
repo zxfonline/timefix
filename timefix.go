@@ -132,7 +132,11 @@ func DeltaDays(unix1, unix2 int64) int64 {
 	t2 := Second2Time(unix2)
 	t1 = Time2Midnight(t1)
 	t2 = Time2Midnight(t2)
-	return int64(t2.Sub(t1)/time.Millisecond) / MILLISECONDS_OF_DAY
+	days := int64(t2.Sub(t1)/time.Millisecond) / MILLISECONDS_OF_DAY
+	if days < 0 {
+		days = -days
+	}
+	return days
 }
 
 //OtherDayByUnix 判断两个时间是否是同一天(t1,t2为秒)
