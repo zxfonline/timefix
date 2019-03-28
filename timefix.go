@@ -44,12 +44,12 @@ const (
 
 //ResetTime 重置时间，传入utc标准时间UnixNano()
 func ResetTime(t int64) {
-	TimeFix = time.Now().UnixNano() - t
+	TimeFix = time.Now().In(Server_Location).UnixNano() - t
 }
 
 //NanosTime 当前本地时间 纳秒 已修正
 func NanosTime() int64 {
-	return time.Now().UnixNano() - TimeFix
+	return time.Now().In(Server_Location).UnixNano() - TimeFix
 }
 
 //CurrentTime 服务器当前时间
