@@ -26,6 +26,7 @@ var (
 func init() {
 	if local, err := time.LoadLocation("Asia/Shanghai"); err == nil && local != nil {
 		Server_Location = local
+		time.Local = Server_Location
 	} else {
 		log.Println("[WARN ] load server location[Asia/Shanghai] error:", err)
 	}
