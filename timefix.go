@@ -102,7 +102,14 @@ func Time2Midnight(tm time.Time) time.Time {
 //NextMidnight 获取一个时间点的 x日后的凌晨时间
 func NextMidnight(tm time.Time, day int) time.Time {
 	midTime := Time2Midnight(tm)
-	ns := midTime.UnixNano() + int64(day*MILLISECONDS_OF_DAY)*int64(time.Millisecond)
+	ns := midTime.AddDate(0, 0, day).UnixNano()
+	return Nanos2Time(ns).In(tm.Location())
+}
+
+//NextMonthMidnight 获取一个时间点的 x月后的凌晨时间
+func NextMonthMidnight(tm time.Time, month int) time.Time {
+	midTime := Time2Midnight(tm)
+	ns := midTime.AddDate(0, month, 0).UnixNano()
 	return Nanos2Time(ns).In(tm.Location())
 }
 
